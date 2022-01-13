@@ -1,0 +1,74 @@
+{
+  tokens=[
+    space='regexp:\s+'
+    number='regexp:\d+(\.\d*)?'
+    string="regexp:('([^'\\]|\\.)*'|\"([^\"\\]|\\.)*\")"
+
+    ident='regexp:[a-z]+'
+
+    EQ='eq'
+    NEQ='neq'
+    AND='and'
+  ]
+}
+// Expression
+// this section isn't at the top in the original .pest grammar
+// however order seems to be important in a .bnf grammar
+//============================================================
+//filter = { SOI ~ compound_expr ~ EOI }
+//
+term ::= expr | "(" compound_expr ")"
+compound_expr ::= term ( logical_op term ) *
+expr ::= var ( bin_op rhs ) ?
+
+// Identifiers
+//============================================================
+var ::= ident { "." ident }
+
+// Rhs
+//============================================================
+// NOTE: unfortunately there is an ambiguity between IP literals and int literal.
+// Though, in the worst case we'll backtrack only 4 characters.
+rhs ::= str_lit | int_lit
+//    ipv4_range | ipv4_cidr | ipv4_lit | ipv6_range | ipv6_cidr | ipv6_lit |
+//    int_range | int_lit | str_lit | re_lit
+
+// Int literal
+int_lit ::= ["-"] { number }
+//digits = _{ oct_digits | ( "0x" ~ hex_digits ) | dec_digits }
+//hex_digits = { ASCII_HEX_DIGIT+ }
+// NOTE: we need to include 0, so i32::from_str_radix can parse it properly
+//oct_digits = { "0" ~ ASCII_OCT_DIGIT+ }
+//dec_digits = { ASCII_DIGIT+ }
+
+// Int range
+//int_range = ${ int_lit ~ ".." ~ int_lit }
+
+// String
+str_lit ::= '"' string '"'
+//esc ::= _{ "\\" ~ ( esc_alias | ( "x" ~ esc_hex_byte ) ) }
+//esc_alias ::= { "\"" | "\\" | "n" | "r" | "t" }
+//esc_hex_byte ::= { ASCII_HEX_DIGIT{2} }
+
+// Logical operators
+//============================================================
+logical_op ::= op_or | op_and | op_xor
+
+op_or ::= "||" | "or"
+op_and ::= "&&" | "and"
+op_xor ::= "^^" | "xor"
+
+// Binary operators
+//============================================================
+bin_op ::= eq_op | ne_op | ge_op | le_op | gt_op | lt_op | band_op | contains_op | matches_op | in_op
+
+eq_op ::= "==" | "eq"
+ne_op ::= "!=" | "ne"
+ge_op ::= ">=" | "ge"
+le_op ::= "<=" | "le"
+gt_op ::= ">" | "gt"
+lt_op ::= "<" | "lt"
+band_op ::= "&" | "bitwise_and"
+contains_op ::= "contains"
+matches_op ::= "~" | "matches"
+in_op ::= "in"
